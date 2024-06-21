@@ -20,6 +20,7 @@ export const AIGenerate = () => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [isMinting, setIsMinting] = useState(false);
     const [useAIImage, setUseAIImage] = useState(true);
+    const [mintedImage, setMintedImage] = useState("");
 
     const { data: nfts, refetch: refetchNFTs } = useReadContract(
         getNFTs,
@@ -46,7 +47,6 @@ export const AIGenerate = () => {
                     }),
                 });
 
-                console.log("Generated image");
                 if (!res.ok) {
                     throw new Error("Failed to generate image");
                 }
@@ -98,9 +98,12 @@ export const AIGenerate = () => {
                 throw new Error("Failed to mint NFT");
             }
 
+            const mintedData = await mintRes.json();
+            setMintedImage(imageUri);
             alert("NFT minted successfully");
         } catch (error) {
             console.error(error);
+            alert(error);
         } finally {
             setIsMinting(false);
             refetchNFTs();
@@ -256,6 +259,25 @@ export const AIGenerate = () => {
                         </form>
                     </div>
                 </div>
+                {mintedImage && (
+                    <div style={{
+                        marginTop: "20px",
+                        textAlign: "center",
+                        border: "1px solid #ddd",
+                        borderRadius: "10px",
+                        padding: "20px",
+                        width: "320px",
+                    }}>
+                        <h3>{imageName}</h3>
+                        <img src={mintedImage} alt={imageName} style={{
+                            width: "300px",
+                            height: "300px",
+                            borderRadius: "8px",
+                            objectFit: "cover",
+                        }} />
+                        <p>{imageDescription}</p>
+                    </div>
+                )}
                 <NFTCollection
                     nfts={nfts || []}
                 />
@@ -263,3 +285,4 @@ export const AIGenerate = () => {
         );
     }
 };
+ 
