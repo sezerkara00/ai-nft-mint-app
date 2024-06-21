@@ -9,6 +9,11 @@ type NFTCollectionProps = {
 };
 
 export const NFTCollection = ({ nfts }: NFTCollectionProps) => {
+    const handleClick = (nft: NFT) => {
+        const openseaUrl = `https://testnets.opensea.io/assets/sepolia/0x3059a544ff0268174bdf13eab471455175287652/${nft.metadata.id || nft.id}`;
+        window.open(openseaUrl, '_blank');
+    };
+
     return (
         <div style={{
             display: "flex",
@@ -25,11 +30,16 @@ export const NFTCollection = ({ nfts }: NFTCollectionProps) => {
                 maxWidth: "600px",
             }}>
                 {nfts.map((nft) => (
-                    <div style={{
-                        padding: "5px",
-                        width: "150px",
-                        height: "150px",
-                    }}>
+                    <div 
+                        key={nft.metadata.id || nft.id} 
+                        style={{
+                            padding: "5px",
+                            width: "150px",
+                            height: "150px",
+                            cursor: "pointer",
+                        }}
+                        onClick={() => handleClick(nft)}
+                    >
                         <MediaRenderer
                             client={client}
                             src={nft.metadata.image}
@@ -43,5 +53,5 @@ export const NFTCollection = ({ nfts }: NFTCollectionProps) => {
                 ))}
             </div>
         </div>
-    )
+    );
 };
