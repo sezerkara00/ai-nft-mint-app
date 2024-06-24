@@ -1,16 +1,15 @@
-import { NextRequest } from 'next/server';
-import { OpenAI } from 'openai';
+import { NextRequest, NextResponse } from 'next/server';
+import { v4 as uuidv4 } from 'uuid';
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
+// Basit bir in-memory veritabanı simülasyonu (gerçek bir veritabanı kullanmanız önerilir)
+let tasks: Record<string, { status: string; result: any }> = {};
 
 interface FetchOptions extends RequestInit {
     timeout?: number;
 }
 
 async function fetchWithTimeout(resource: string, options: FetchOptions = {}): Promise<Response> {
-    const { timeout = 20000 } = options; // 20 saniyelik bir timeout belirledik
+    const { timeout = 60000 } = options; // 60 saniyelik bir timeout belirledik
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeout);
     const response = await fetch(resource, {
@@ -26,45 +25,71 @@ export async function POST(req: NextRequest) {
         const { imagePrompt } = await req.json();
 
         if (!imagePrompt) {
-            return new Response(JSON.stringify({ error: "Missing required fields" }), {
+            return new NextResponse(JSON.stringify({ error: "Missing required fields" }), {
                 status: 400,
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
             });
         }
 
-        const prompt = `${imagePrompt}`;
+        const taskId = uuidv4();
+        tasks[taskId] = { status: 'pending', result: null };
 
-        const response = await openai.images.generate({
-            model: "dall-e-3",
-            prompt: prompt,
-            n: 1,
-            size: "1024x1024"
+        // Görevi kuyruk sistemine ekle (in-memory veritabanında sakla)
+        setImmediate(async () => {
+            try {
+                const prompt = `${imagePrompt}`;
+                const response = await fetchWithTimeout(`https://api.openai.com/v1/images/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: "dall-e-3",
+                        prompt: prompt,
+                        n: 1,
+                        size: "1024x1024"
+                    }),
+                    timeout: 60000 // 60 saniye timeout
+                });
+
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error?.message || 'Failed to generate image');
+                }
+
+                tasks[taskId] = { status: 'completed', result: data };
+            } catch (error) {
+                tasks[taskId] = { status: 'failed', result: error.message };
+            }
         });
 
-        if (!response.data) {
-            throw new Error("Failed to generate image");
-        }
-
-        console.log("Generated image: " + JSON.stringify(response, null, 2));
-        console.log("Generated image URL: " + response.data[0].url);
-        console.log("b64Json: " + response.data[0].b64_json);
-
-        return new Response(JSON.stringify({ data: response.data }), {
-            status: 200,
-            headers: {
-                'Content-Type': 'application/json',
-            },
+        return new NextResponse(JSON.stringify({ taskId }), {
+            status: 202,
+            headers: { 'Content-Type': 'application/json' },
         });
-
     } catch (error) {
-        console.error("Error generating image:", error);
-        return new Response(JSON.stringify({ error: "Failed to generate image due to internal server error" }), {
+        console.error("Error:", error);
+        return new NextResponse(JSON.stringify({ error: "Internal server error" }), {
             status: 500,
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
         });
     }
+}
+
+export async function GET(req: NextRequest) {
+    const { searchParams } = new URL(req.url);
+    const taskId = searchParams.get('taskId');
+
+    if (!taskId || !tasks[taskId]) {
+        return new NextResponse(JSON.stringify({ error: "Task not found" }), {
+            status: 404,
+            headers: { 'Content-Type': 'application/json' },
+        });
+    }
+
+    return new NextResponse(JSON.stringify(tasks[taskId]), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+    });
 }
