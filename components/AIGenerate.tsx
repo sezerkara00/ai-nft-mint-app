@@ -179,7 +179,7 @@ export const AIGenerate = () => {
                                         value="ai"
                                         checked={useAIImage}
                                         onChange={() => setUseAIImage(true)}
-                                    /> Use AI-generated imagee
+                                    /> Use AI-generated image.
                                 </label>
                                 <label>
                                     <input
