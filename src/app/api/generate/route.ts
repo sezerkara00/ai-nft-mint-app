@@ -6,7 +6,7 @@ const openai = new OpenAI({
 });
 
 async function fetchWithTimeout(resource, options = {}) {
-    const { timeout = 8000 } = options; // 8 saniyelik bir timeout belirledik
+    const { timeout = 20000 } = options; // 20 saniyelik bir timeout belirledik
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeout);
     const response = await fetch(resource, {
