@@ -5,7 +5,11 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
-async function fetchWithTimeout(resource, options = {}) {
+interface FetchOptions extends RequestInit {
+    timeout?: number;
+}
+
+async function fetchWithTimeout(resource: string, options: FetchOptions = {}): Promise<Response> {
     const { timeout = 20000 } = options; // 20 saniyelik bir timeout belirledik
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeout);
