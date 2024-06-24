@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
         });
 
         if (!response.data) {
-            throw new Error("Failed to generate image1");
+            throw new Error("Failed to generate image");
         }
 
         return new Response(JSON.stringify({ data: response.data }), {
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
         });
 
     } catch (error) {
-        console.error("Error generating image:", error);
+        console.error("Errorr generating image:", error);
         return new Response(JSON.stringify({ error: "Failed to generate image due to internal server error" }), {
             status: 500,
             headers: {
