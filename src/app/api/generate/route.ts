@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
         });
 
         if (!response.data) {
-            throw new Error("Failed to generate image");
+            throw new Error("Failed to generate image1");
         }
 
         return new Response(JSON.stringify({ data: response.data }), {
